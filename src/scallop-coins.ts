@@ -8,6 +8,7 @@ export type LoanableCoin = {
   scallopName: string;
   symbol: string;
   coinPrice: number;
+  supplyCoin: number;
 };
 
 let cache: LoanableCoin[] | null = null;
@@ -26,6 +27,7 @@ export async function loadLoanableCoins(cfg: Config): Promise<LoanableCoin[]> {
       scallopName: pool.coinName,
       symbol: pool.symbol,
       coinPrice: pool.coinPrice,
+      supplyCoin: pool.supplyCoin ?? 0,
     });
   }
   cache = out;

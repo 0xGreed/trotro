@@ -1,7 +1,15 @@
 import type { Config, PairConfig, CoinSpec } from './config.js';
-import { loadLoanableCoins, type LoanableCoin } from './scallop-coins.js';
+import { loadLoanableCoins } from './scallop-coins.js';
 import { fetchUsdPrices } from './prices.js';
 import { logger } from './logger.js';
+
+const STABLE_SYMBOLS = new Set([
+  'USDC', 'USDT', 'WUSDC', 'WUSDT', 'SBUSDT', 'USDY', 'USDSUI', 'FDUSD', 'DAI', 'BUCK', 'AUSD',
+]);
+
+function isStable(sym: string | undefined): boolean {
+  return !!sym && STABLE_SYMBOLS.has(sym.toUpperCase());
+}
 
 function usdToAtomic(usd: number, price: number, decimals: number): bigint {
   if (price <= 0 || !Number.isFinite(price)) return 0n;
@@ -12,8 +20,32 @@ function usdToAtomic(usd: number, price: number, decimals: number): bigint {
 }
 
 export async function buildPairs(cfg: Config): Promise<PairConfig[]> {
-  const loanable = await loadLoanableCoins(cfg);
-  if (loanable.length === 0) throw new Error('no loanable coins returned by Scallop');
+  const allLoanable = await loadLoanableCoins(cfg);
+  if (allLoanable.length === 0) throw new Error('no loanable coins returned by Scallop');
+
+  // Rank by USD TVL using Aftermath prices (Scallop's coinPrice is often 0).
+  const allTypes = Array.from(new Set([
+    ...allLoanable.map((c) => c.coinType),
+    ...cfg.extraBCoins.map((c) => c.coinType),
+  ]));
+  const prices = await fetchUsdPrices(allTypes);
+
+  const withTvl = allLoanable.map((c) => {
+    const price = prices[c.coinType] ?? c.coinPrice ?? 0;
+    return { coin: c, price, tvlUsd: c.supplyCoin * price };
+  });
+  withTvl.sort((x, y) => y.tvlUsd - x.tvlUsd);
+  const kept = cfg.topLoanable > 0 ? withTvl.slice(0, cfg.topLoanable) : withTvl;
+  const loanable = kept.map((r) => r.coin);
+
+  logger.info(
+    {
+      kept: loanable.length,
+      total: allLoanable.length,
+      topTvl: kept.map((r) => ({ sym: r.coin.symbol, tvl: Math.round(r.tvlUsd) })),
+    },
+    'loanable coins ranked by TVL',
+  );
 
   const bCandidates: CoinSpec[] = [
     ...loanable.map((c) => ({
@@ -23,15 +55,6 @@ export async function buildPairs(cfg: Config): Promise<PairConfig[]> {
     })),
     ...cfg.extraBCoins,
   ];
-
-  // Pull USD prices for all coins involved so we can size notionals.
-  const allTypes = Array.from(
-    new Set([...loanable.map((c) => c.coinType), ...bCandidates.map((c) => c.coinType)]),
-  );
-  const prices = await fetchUsdPrices(allTypes);
-
-  const loanableIndex = new Map<string, LoanableCoin>();
-  for (const c of loanable) loanableIndex.set(c.coinType, c);
 
   const pairs: PairConfig[] = [];
   for (const a of loanable) {
@@ -47,6 +70,7 @@ export async function buildPairs(cfg: Config): Promise<PairConfig[]> {
 
     for (const b of bCandidates) {
       if (b.coinType === a.coinType) continue;
+      if (isStable(a.symbol) && isStable(b.symbol)) continue;
       const bPrice = prices[b.coinType];
       if (!bPrice || bPrice < cfg.minPairPriceUsd) continue;
 

@@ -25,6 +25,7 @@ export type Config = {
   pollIntervalMs: number;
   usdNotionals: number[];
   minPairPriceUsd: number;
+  topLoanable: number;
   extraBCoins: CoinSpec[];
 };
 
@@ -55,6 +56,7 @@ export function loadConfig(): Config {
     pollIntervalMs: Number(process.env.POLL_INTERVAL_MS ?? 5000),
     usdNotionals: parseNumberList(process.env.USD_NOTIONALS, [100, 1000, 10_000]),
     minPairPriceUsd: Number(process.env.MIN_PAIR_PRICE_USD ?? 0.0001),
+    topLoanable: Number(process.env.TOP_LOANABLE ?? 10),
     extraBCoins: [],
   };
 }
