@@ -1,0 +1,31 @@
+{
+  "name": "trotro",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Sui arbitrage bot using aggregators + Scallop flashloans",
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "dev": "tsx watch src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "smoke:grpc": "tsx scripts/grpc-smoke.ts",
+    "smoke:quote": "tsx scripts/quote-smoke.ts"
+  },
+  "dependencies": {
+    "@7kprotocol/sdk-ts": "^2.0.0",
+    "@cetusprotocol/aggregator-sdk": "^0.6.0",
+    "@mysten/sui": "^1.20.0",
+    "bn.js": "^5.2.1",
+    "@protobuf-ts/grpcweb-transport": "^2.9.4",
+    "@scallop-io/sui-scallop-sdk": "^2.1.0",
+    "dotenv": "^16.4.5",
+    "pino": "^9.0.0",
+    "pino-pretty": "^11.0.0"
+  },
+  "devDependencies": {
+    "@types/bn.js": "^5.1.5",
+    "@types/node": "^20.11.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.4.0"
+  }
+}
