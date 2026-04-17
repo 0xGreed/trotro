@@ -1,6 +1,7 @@
 import { loadConfig } from '../src/config.js';
 import { createSuiContext } from '../src/client.js';
 import { buildAdapters } from '../src/aggregators/index.js';
+import { buildPairs } from '../src/pairs.js';
 import { logger } from '../src/logger.js';
 
 async function main() {
@@ -8,8 +9,9 @@ async function main() {
   const ctx = createSuiContext(cfg);
   const adapters = buildAdapters(ctx);
 
-  const pair = cfg.pairs[0];
-  if (!pair) throw new Error('no pairs configured');
+  const pairs = await buildPairs(cfg);
+  const pair = pairs[0];
+  if (!pair) throw new Error('no pairs built');
   const notional = pair.notionals[0];
   if (!notional) throw new Error('no notional configured');
 

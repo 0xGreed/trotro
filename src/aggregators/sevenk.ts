@@ -1,4 +1,6 @@
-import { getQuote, buildTx } from '@7kprotocol/sdk-ts';
+// 7K's ESM build ships imports without file extensions, which Node's native
+// ESM loader rejects. Use the CJS subpath instead.
+import { getQuote, buildTx } from '@7kprotocol/sdk-ts/cjs';
 import type { TransactionObjectArgument } from '@mysten/sui/transactions';
 import type { SwapAdapter, Quote, AppendSwapArgs } from './types.js';
 import type { SuiContext } from '../client.js';
