@@ -2,7 +2,7 @@ import { SuiGrpcClient } from '@mysten/sui/grpc';
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
 import { decodeSuiPrivateKey } from '@mysten/sui/cryptography';
 import { GrpcTransport } from '@protobuf-ts/grpc-transport';
-import { ChannelCredentials, Metadata, credentials } from '@grpc/grpc-js';
+import { credentials } from '@grpc/grpc-js';
 import type { Config } from './config.js';
 
 export type SuiContext = {
@@ -37,21 +37,13 @@ function parseGrpcHost(url: string): { host: string; secure: boolean } {
   return { host: url.includes(':') ? url : `${url}:443`, secure: true };
 }
 
-function buildChannelCreds(secure: boolean, token: string): ChannelCredentials {
-  if (!secure) return credentials.createInsecure();
-  const callCreds = credentials.createFromMetadataGenerator((_ctx, cb) => {
-    const md = new Metadata();
-    md.set('x-token', token);
-    cb(null, md);
-  });
-  return credentials.combineChannelCredentials(credentials.createSsl(), callCreds);
-}
-
 export function createSuiContext(cfg: Config): SuiContext {
   const { host, secure } = parseGrpcHost(cfg.grpcUrl);
   const transport = new GrpcTransport({
     host,
-    channelCredentials: buildChannelCreds(secure, cfg.grpcToken),
+    channelCredentials: secure ? credentials.createSsl() : credentials.createInsecure(),
+    // `meta` is sent as gRPC metadata on every call — same slot as grpcurl's `-H`.
+    meta: { 'x-token': cfg.grpcToken },
   });
   const client = new SuiGrpcClient({ network: 'mainnet', transport });
   const keypair = keypairFromSecret(cfg.privateKey);
