@@ -14,10 +14,12 @@
   "dependencies": {
     "@7kprotocol/sdk-ts": "^2.0.0",
     "@cetusprotocol/aggregator-sdk": "^0.6.0",
+    "@grpc/grpc-js": "^1.14.3",
     "@mysten/sui": "^1.20.0",
-    "bn.js": "^5.2.1",
+    "@protobuf-ts/grpc-transport": "^2.11.1",
     "@protobuf-ts/grpcweb-transport": "^2.9.4",
     "@scallop-io/sui-scallop-sdk": "^2.1.0",
+    "bn.js": "^5.2.1",
     "dotenv": "^16.4.5",
     "pino": "^9.0.0",
     "pino-pretty": "^11.0.0"
