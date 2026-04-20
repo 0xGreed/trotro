@@ -1,8 +1,7 @@
 // 7K's ESM build ships imports without file extensions, which Node's native
 // ESM loader rejects. Use the CJS subpath instead.
 import { getQuote, buildTx } from '@7kprotocol/sdk-ts/cjs';
-import type { TransactionObjectArgument } from '@mysten/sui/transactions';
-import type { SwapAdapter, Quote, AppendSwapArgs } from './types.js';
+import type { SwapAdapter, Quote, AppendSwapArgs, AppendSwapResult } from './types.js';
 import type { SuiContext } from '../client.js';
 
 export class SevenKAdapter implements SwapAdapter {
@@ -31,7 +30,7 @@ export class SevenKAdapter implements SwapAdapter {
     };
   }
 
-  async appendSwap(args: AppendSwapArgs): Promise<TransactionObjectArgument> {
+  async appendSwap(args: AppendSwapArgs): Promise<AppendSwapResult> {
     const result = await buildTx({
       quoteResponse: args.quote.raw as Parameters<typeof buildTx>[0]['quoteResponse'],
       accountAddress: args.sender,
@@ -40,6 +39,6 @@ export class SevenKAdapter implements SwapAdapter {
       extendTx: { tx: args.tx, coinIn: args.coinIn },
     });
     if (!result.coinOut) throw new Error('7k: buildTx returned no coinOut');
-    return result.coinOut;
+    return { coinOut: result.coinOut, tx: args.tx };
   }
 }

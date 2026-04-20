@@ -1,7 +1,6 @@
 import { Aftermath } from 'aftermath-ts-sdk';
 import type { Router } from 'aftermath-ts-sdk';
-import type { TransactionObjectArgument } from '@mysten/sui/transactions';
-import type { SwapAdapter, Quote, AppendSwapArgs } from './types.js';
+import type { SwapAdapter, Quote, AppendSwapArgs, AppendSwapResult } from './types.js';
 import type { SuiContext } from '../client.js';
 
 export class AftermathAdapter implements SwapAdapter {
@@ -39,12 +38,14 @@ export class AftermathAdapter implements SwapAdapter {
     };
   }
 
-  async appendSwap(args: AppendSwapArgs): Promise<TransactionObjectArgument> {
+  async appendSwap(args: AppendSwapArgs): Promise<AppendSwapResult> {
     const router = await this.ensureReady();
     const completeRoute = args.quote.raw as Awaited<
       ReturnType<Router['getCompleteTradeRouteGivenAmountIn']>
     >;
-    const { coinOutId } = await router.addTransactionForCompleteTradeRoute({
+    // Aftermath returns a NEW Transaction (not a mutation of args.tx). All
+    // subsequent commands must be appended to `tx` — not `args.tx`.
+    const { tx, coinOutId } = await router.addTransactionForCompleteTradeRoute({
       tx: args.tx,
       completeRoute,
       slippage: args.slippageBps / 10_000,
@@ -52,6 +53,6 @@ export class AftermathAdapter implements SwapAdapter {
       coinInId: args.coinIn,
     });
     if (!coinOutId) throw new Error('aftermath: addTransactionForCompleteTradeRoute returned no coinOutId');
-    return coinOutId;
+    return { coinOut: coinOutId, tx };
   }
 }

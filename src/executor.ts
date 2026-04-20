@@ -34,28 +34,37 @@ export async function execute(
 
   const { builder } = await getScallop(cfg);
   const stb = newTxBlock(builder);
-  const tx = stb.txBlock;
+  // Initial tx instance; adapters may return a new Transaction (e.g. Aftermath
+  // reconstructs via Transaction.from), so we re-bind after every swap.
+  let tx = stb.txBlock;
 
   const leg1 = findAdapter(adapters, opp.leg1Quote.adapter);
   const leg2 = findAdapter(adapters, opp.leg2Quote.adapter);
 
   const [borrowed, loan] = borrow(stb, opp.notional, opp.pair.a.scallopName);
 
-  const coinB = await leg1.appendSwap({
+  const leg1Res = await leg1.appendSwap({
     tx,
     sender: ctx.sender,
     coinIn: borrowed,
     quote: opp.leg1Quote,
     slippageBps: cfg.slippageBps,
   });
+  tx = leg1Res.tx;
+  // Keep the Scallop-wrapped block pointing at the live tx so the repay
+  // flash-loan call below writes to the same Transaction instance.
+  stb.txBlock = tx;
 
-  const coinA2 = await leg2.appendSwap({
+  const leg2Res = await leg2.appendSwap({
     tx,
     sender: ctx.sender,
-    coinIn: coinB,
+    coinIn: leg1Res.coinOut,
     quote: opp.leg2Quote,
     slippageBps: cfg.slippageBps,
   });
+  tx = leg2Res.tx;
+  stb.txBlock = tx;
+  const coinA2 = leg2Res.coinOut;
 
   const [repayCoin] = tx.splitCoins(coinA2, [tx.pure.u64(opp.notional)]);
   repay(stb, repayCoin, loan, opp.pair.a.scallopName);

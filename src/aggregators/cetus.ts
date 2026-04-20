@@ -1,7 +1,6 @@
 import { AggregatorClient, type RouterData } from '@cetusprotocol/aggregator-sdk';
 import BN from 'bn.js';
-import type { TransactionObjectArgument } from '@mysten/sui/transactions';
-import type { SwapAdapter, Quote, AppendSwapArgs } from './types.js';
+import type { SwapAdapter, Quote, AppendSwapArgs, AppendSwapResult } from './types.js';
 import type { SuiContext } from '../client.js';
 
 export class CetusAdapter implements SwapAdapter {
@@ -30,13 +29,14 @@ export class CetusAdapter implements SwapAdapter {
     };
   }
 
-  async appendSwap(args: AppendSwapArgs): Promise<TransactionObjectArgument> {
+  async appendSwap(args: AppendSwapArgs): Promise<AppendSwapResult> {
     const routers = args.quote.raw as RouterData;
-    return this.client.routerSwap({
+    const coinOut = await this.client.routerSwap({
       routers,
       txb: args.tx,
       inputCoin: args.coinIn,
       slippage: args.slippageBps / 10_000,
     });
+    return { coinOut, tx: args.tx };
   }
 }
