@@ -80,6 +80,7 @@ export async function buildPairs(cfg: Config): Promise<PairConfig[]> {
           decimals: a.decimals,
           symbol: a.symbol,
           scallopName: a.scallopName,
+          priceUsd: aPrice,
         },
         b,
         notionals,

@@ -25,6 +25,12 @@ export async function execute(
   if (opp.profitBps < cfg.profitBpsMin) {
     return { kind: 'skipped', reason: `profit ${opp.profitBps} bps < min ${cfg.profitBpsMin}` };
   }
+  if (opp.profitUsd < cfg.minProfitUsd) {
+    return {
+      kind: 'skipped',
+      reason: `profit $${opp.profitUsd.toFixed(4)} < min $${cfg.minProfitUsd}`,
+    };
+  }
 
   const { builder } = await getScallop(cfg);
   const stb = newTxBlock(builder);
@@ -72,6 +78,7 @@ export async function execute(
       notional: opp.notional.toString(),
       profit: opp.profit.toString(),
       profitBps: opp.profitBps,
+      profitUsd: opp.profitUsd,
     },
     'dry-run profitable arb',
   );

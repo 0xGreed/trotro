@@ -8,7 +8,7 @@ export type CoinSpec = {
 };
 
 export type PairConfig = {
-  a: CoinSpec & { scallopName: string };
+  a: CoinSpec & { scallopName: string; priceUsd: number };
   b: CoinSpec;
   notionals: bigint[];
 };
@@ -20,6 +20,7 @@ export type Config = {
   scallopAddressId: string;
   dryRun: boolean;
   profitBpsMin: number;
+  minProfitUsd: number;
   prefilterBps: number;
   slippageBps: number;
   pollIntervalMs: number;
@@ -51,6 +52,7 @@ export function loadConfig(): Config {
     scallopAddressId: requireEnv('SCALLOP_ADDRESS_ID'),
     dryRun: (process.env.DRY_RUN ?? 'true').toLowerCase() !== 'false',
     profitBpsMin: Number(process.env.PROFIT_BPS_MIN ?? 50),
+    minProfitUsd: Number(process.env.MIN_PROFIT_USD ?? 0.3),
     prefilterBps: Number(process.env.PREFILTER_BPS ?? 10),
     slippageBps: Number(process.env.SLIPPAGE_BPS ?? 30),
     pollIntervalMs: Number(process.env.POLL_INTERVAL_MS ?? 5000),

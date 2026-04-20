@@ -47,6 +47,17 @@ async function processPair(
     return;
   }
   if (!best || best.profitBps < cfg.profitBpsMin) return;
+  if (best.profitUsd < cfg.minProfitUsd) {
+    logger.debug(
+      {
+        pair: pairLabel(pair),
+        profitUsd: best.profitUsd,
+        minProfitUsd: cfg.minProfitUsd,
+      },
+      'skip: profit below USD minimum',
+    );
+    return;
+  }
 
   try {
     const result = await execute(cfg, ctx, adapters, best);

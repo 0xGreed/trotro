@@ -9,7 +9,13 @@ export type Opportunity = {
   leg2Quote: Quote;
   profit: bigint;
   profitBps: number;
+  profitUsd: number;
 };
+
+function atomicToUsd(atomic: bigint, decimals: number, priceUsd: number): number {
+  if (!Number.isFinite(priceUsd) || priceUsd <= 0) return 0;
+  return (Number(atomic) / 10 ** decimals) * priceUsd;
+}
 
 async function bestQuote(
   adapters: SwapAdapter[],
@@ -42,7 +48,8 @@ export async function scanPairAtNotional(
   if (!leg2) return null;
   const profit = leg2.amountOut - notional;
   const profitBps = Number((profit * 10_000n) / notional);
-  return { pair, notional, leg1Quote: leg1, leg2Quote: leg2, profit, profitBps };
+  const profitUsd = atomicToUsd(profit, pair.a.decimals, pair.a.priceUsd);
+  return { pair, notional, leg1Quote: leg1, leg2Quote: leg2, profit, profitBps, profitUsd };
 }
 
 export async function scanPair(
@@ -62,6 +69,7 @@ export async function scanPair(
         leg2: opp.leg2Quote.adapter,
         profit: opp.profit.toString(),
         profitBps: opp.profitBps,
+        profitUsd: opp.profitUsd,
       },
       'scan result',
     );
